@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<asmv1:assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1" xmlns:asmv1="urn:schemas-microsoft-com:asm.v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <assemblyIdentity version="1.0.0.0" name="SVSLabToolsInstaller.app" />
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <!--
+          requireAdministrator：这个安装器会把文件写进用户选择的安装目录
+          （默认建议 Program Files 下），并且用 micromamba 建的环境目录也
+          挂在同一路径下——如果用户选了需要管理员权限的目录，没有这个
+          manifest 声明，Windows 只会在实际写入失败时才报错，用户体验是
+          "装到一半突然报拒绝访问"。用 requireAdministrator 让 Windows
+          在程序启动的那一刻就弹一次 UAC 确认，成功了后面全程不再有权限
+          问题，失败了用户也能第一时间明白是怎么回事，而不是装到一半懵。
+        -->
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 / 11 兼容性 GUID，让程序在这些系统上正确识别自身，
+           避免被当作老旧程序套用兼容性模式 shim。 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}" />
+      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}" />
+      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}" />
+      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}" />
+    </application>
+  </compatibility>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <!-- 声明 DPI 感知，避免在高分屏上界面被系统拉伸糊掉。 -->
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true</dpiAware>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+</asmv1:assembly>

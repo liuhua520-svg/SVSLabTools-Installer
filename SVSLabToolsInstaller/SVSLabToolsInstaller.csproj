@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7C6E1B2A-4F3D-4A9E-9C1B-2E5D8F0A1B33}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>SVSLabToolsInstaller</RootNamespace>
+    <AssemblyName>SVSLabToolsInstaller</AssemblyName>
+    <!-- .NET Framework 4.7.2：按用户要求锁定这个目标框架版本，不用更高版本，
+         保证在较旧的 Windows 10 机器上（未必装了更新的 .NET Framework）也能
+         直接运行，不需要额外提示用户升级运行时。 -->
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <!-- 【重要】.NET Framework 项目（不同于 .NET Core/.NET 5+ 项目）的
+         LangVersion 默认值固定是 C# 7.0，不会因为 TargetFrameworkVersion
+         设得更高就自动跟着提升——这是已经在 dotnet/docs 官方 issue 里
+         明确确认过的行为差异。C# 7.3 是 .NET Framework 4.7.2 官方支持
+         的最高语言版本，这里显式声明，确保代码里用到的 7.1+ 语法特性
+         （如 out 变量的一些用法、ref struct 等，这个项目目前主要用到的
+         是显式类型的 default 写法已经改为更保守的 C# 7.0 兼容写法，这里
+         的声明是双重保险，不依赖开发者本地 VS 环境的默认设置）能被正确
+         识别，同时不引入 C# 8.0+（如可空引用类型）可能带来的额外警告。 -->
+    <LangVersion>7.3</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <!-- 这是个安装器工具，不需要 x86/x64 分开出包，AnyCPU 即可；micromamba.exe
+         等外部工具是独立进程调用，不受宿主程序位数影响。 -->
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <!-- 【曾经启用过 ClickOnce，现已移除】ClickOnce 部署明确不支持
+         app.manifest 里声明非 asInvoker 的 requestedExecutionLevel——
+         ClickOnce 的信任模型要求应用以标准用户权限运行，这样才能在
+         不弹 UAC 提示的情况下完成自动更新，这和下面"通过 app.manifest
+         请求管理员权限"的设计直接冲突（编译时会报错："ClickOnce 不
+         支持请求执行级别 requireAdministrator"）。这个项目本身需要
+         管理员权限才能正常安装（写 Program Files、调用 msiexec、
+         删除系统目录），且不需要 ClickOnce 那套"点击网页链接自动
+         安装/更新"的部署机制，只是编译出单个 exe 直接分发，所以移除
+         了 ClickOnce 相关属性（PublishUrl/Install/InstallFrom/
+         Update*/ApplicationRevision/ApplicationVersion/
+         UseApplicationTrust/PublishWizardCompleted/BootstrapperEnabled
+         等），保留 app.manifest 的 requireAdministrator 声明。
+         如果以后确实需要 ClickOnce 自动更新能力，需要反过来把
+         requestedExecutionLevel 改回 asInvoker，并调整代码里所有
+         依赖管理员权限的逻辑（写 Program Files、调用 msiexec 等）。 -->
+    <!-- 安装器类工具通常需要管理员权限写入 Program Files；这里通过
+         app.manifest 请求 UAC 提权，而不是依赖用户自己"以管理员身份运行"，
+         减少因为忘记提权导致的"复制文件到 Program Files 失败"这类问题。 -->
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>SVS-Lab-Tools-Installer.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <!-- 【曾经启用过 ClickOnce，现已移除】ManifestCertificateThumbprint 是
+       ClickOnce 清单签名用的证书指纹，随 SignManifests 一起移除——见
+       上方 PlatformTarget 附近的详细说明。ApplicationManifest 保留：
+       这是普通 Win32 应用嵌入 UAC 清单（声明 requireAdministrator）的
+       标准机制，与 ClickOnce 无关，任何需要请求管理员权限的 .NET
+       Framework exe 都需要它。 -->
+  <!-- 【曾经启用过 ClickOnce，现已移除】不再生成/签名 ClickOnce 部署
+       清单——见上方 PlatformTarget 附近的详细说明。
+       SVSLabToolsInstaller_TemporaryKey.pfx 这个证书文件本身留在项目
+       目录里不影响任何东西，只是不再被引用；如需彻底清理可以手动
+       删除该文件，不删也没有副作用。 -->
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Core\MsiLauncher.cs" />
+    <Compile Include="Core\PayloadExtractor.cs" />
+    <Compile Include="Core\Strings.cs" />
+    <Compile Include="Core\Strings.ZhHans.cs" />
+    <Compile Include="Core\Strings.ZhHant.cs" />
+    <Compile Include="Core\Strings.En.cs" />
+    <Compile Include="Core\Strings.Ja.cs" />
+    <Compile Include="Core\Strings.Ko.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\InstallStep.cs" />
+    <Compile Include="Core\MicromambaRunner.cs" />
+    <Compile Include="Core\EnvironmentPlanner.cs" />
+    <Compile Include="Core\TorchVariant.cs" />
+    <Compile Include="Core\RequirementsBuilder.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.manifest" />
+    <None Include="SVSLabToolsInstaller_TemporaryKey.pfx" />
+  </ItemGroup>
+  <!-- payload：micromamba.exe / "SVS Lab Tools.msi" / EnvAssets 下两个
+       .py 文件，编译期作为嵌入资源打进程序集本体，运行时由
+       Core/PayloadExtractor.cs 释放到临时目录再使用，最终只产出单个
+       exe，不需要额外的 Payload 文件夹一起分发。
+
+       【为什么之前不这样做，现在又改了】早期设计阶段 Payload 目录还
+       可能包含 backend 源码 + frontend 构建产物，体积不确定、且预期
+       会很大，所以当时选择作为普通文件（<None>）随输出目录一起复制。
+       后来 backend/frontend 改由随后调起的 "SVS Lab Tools.msi" 自己
+       安装（见 MainForm.cs、MsiLauncher.cs 的相关注释），Payload 目录
+       实际只剩 micromamba.exe + 这个 msi 本体 + 两个小 .py 文件，
+       合计约 52MB，这个体量下嵌入资源没有实际的编译耗时或内存问题，
+       改为嵌入以获得"单文件 exe"的分发便利。
+
+       【为什么每一项都显式写 LogicalName，而不是让 MSBuild 按文件路径
+       自动推算清单资源名】MSBuild 的默认推算规则会对文件夹名、空格、
+       多个点做转义替换，具体转义结果没有可靠的公开算法能在代码里
+       精确复现（连 MSBuild 官方 issue 里都承认没有已知的工具方法可以
+       转换），"SVS Lab Tools.msi" 这种文件名又带空格又带点，尤其容易
+       猜错导致运行时找不到资源。显式 LogicalName 元数据可以完全绕开
+       这套推算——LogicalName 一旦设置，编译器保证优先使用它而不是
+       自动推算的名字，PayloadExtractor.cs 里的资源名常量与这里的
+       LogicalName 逐项对应，两边同时改，不能只改一边。 -->
+  <ItemGroup>
+    <EmbeddedResource Include="Payload\micromamba.exe">
+      <LogicalName>Payload_micromamba_exe</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Payload\Msi\SVS Lab Tools.msi">
+      <LogicalName>Payload_SVSLabTools_msi</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Payload\EnvAssets\mfa_env_sitecustomize.py">
+      <LogicalName>Payload_EnvAssets_sitecustomize_py</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Payload\EnvAssets\mfa_utils.py">
+      <LogicalName>Payload_EnvAssets_mfa_utils_py</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="SVS-Lab-Tools-Installer.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 和 x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
