@@ -88,7 +88,7 @@ namespace SVSLabToolsInstaller
             ["chkLangKor"] = "Ui.LangKorean",
             ["chkLangYue"] = "Ui.LangCantonese",
             ["chkNemo"] = "Ui.ChkNemo",
-            ["chkQwen3Asr"] = "Ui.ChkQwen3Asr",
+            ["chkWhisperX"] = "Ui.ChkWhisperX",
             ["chkQwen3Tts"] = "Ui.ChkQwen3Tts",
             ["grpTorch"] = "Ui.GroupTorch",
             ["radioTorchCpu"] = "Ui.TorchCpu",
@@ -149,7 +149,7 @@ namespace SVSLabToolsInstaller
         {
             bool anyLangSelected = sel.LangChinese || sel.LangEnglish || sel.LangJapanese
                                     || sel.LangKorean || sel.LangCantonese;
-            if (anyLangSelected && !sel.Core && !Directory.Exists(Path.Combine(txtInstallDir.Text.Trim(), ".mfa_env")))
+            if (anyLangSelected && !sel.Core && !Directory.Exists(EnvironmentPlanner.EnvPrefixFor(txtInstallDir.Text.Trim(), ".mfa_env")))
             {
                 var choice = MessageBox.Show(
                     Strings.Get("Msg.MissingCoreBody"),
@@ -160,7 +160,7 @@ namespace SVSLabToolsInstaller
                 if (choice == DialogResult.Yes) chkCore.Checked = true;
             }
 
-            bool anySelected = sel.Core || anyLangSelected || sel.Nemo || sel.Qwen3Asr || sel.Qwen3Tts;
+            bool anySelected = sel.Core || anyLangSelected || sel.Nemo || sel.WhisperX || sel.Qwen3Tts;
             if (!anySelected)
             {
                 MessageBox.Show(Strings.Get("Msg.NoSelectionBody"), Strings.Get("Msg.NoSelectionTitle"),
@@ -182,7 +182,7 @@ namespace SVSLabToolsInstaller
                 LangKorean = chkLangKor.Checked,
                 LangCantonese = chkLangYue.Checked,
                 Nemo = chkNemo.Checked,
-                Qwen3Asr = chkQwen3Asr.Checked,
+                WhisperX = chkWhisperX.Checked,
                 Qwen3Tts = chkQwen3Tts.Checked,
                 Torch = radioTorchCuda118.Checked ? TorchVariant.Cuda118
                        : radioTorchCuda121.Checked ? TorchVariant.Cuda121
@@ -499,6 +499,11 @@ namespace SVSLabToolsInstaller
         }
 
         private void MainForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chkCore_CheckedChanged(object sender, EventArgs e)
         {
 
         }

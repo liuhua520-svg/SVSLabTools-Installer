@@ -11,7 +11,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.WindowTitle"] = "SVS Lab Tools Installer",
 
             ["Ui.GroupComponents"] = "Select components to install",
-            ["Ui.ChkCore"] = "Core (main runtime environment, recommended)",
+            ["Ui.ChkCore"] = "Core (main runtime environment, required)",
             ["Ui.GroupLang"] = "MFA language models (requires Core)",
             ["Ui.LangChinese"] = "Mandarin Chinese",
             ["Ui.LangEnglish"] = "English",
@@ -19,7 +19,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.LangKorean"] = "Korean",
             ["Ui.LangCantonese"] = "Cantonese",
             ["Ui.ChkNemo"] = "NeMo-FA (isolated environment, forced alignment service)",
-            ["Ui.ChkQwen3Asr"] = "Qwen3-ASR (isolated environment, speech recognition service)",
+            ["Ui.ChkWhisperX"] = "WhisperX (isolated environment, speech recognition service)",
             ["Ui.ChkQwen3Tts"] = "Qwen3-TTS (isolated environment, speech synthesis service)",
 
             ["Ui.GroupTorch"] = "PyTorch hardware type (affects the torch build used by every environment)",
@@ -33,7 +33,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.SizeHint"] =
                 "Estimated disk usage (approximate — actual size depends on downloads):\n" +
                 "Core ~3-5 GB (incl. PyTorch); each language model ~100-500 MB;\n" +
-                "NeMo-FA ~3-4 GB; Qwen3-ASR ~4-6 GB; Qwen3-TTS ~4-6 GB.",
+                "NeMo-FA ~3-4 GB; WhisperX ~3-5 GB; Qwen3-TTS ~4-6 GB.",
 
             ["Ui.StartInstall"] = "Install",
             ["Ui.CancelInstall"] = "Cancel Installation",
@@ -44,7 +44,7 @@ namespace SVSLabToolsInstaller.Core
             ["Step.Core"] = "Core: create main environment (.mfa_env) and install dependencies",
             ["Step.Lang"] = "MFA language model: {0}",
             ["Step.Nemo"] = "NeMo-FA: create isolated environment and install dependencies",
-            ["Step.Qwen3Asr"] = "Qwen3-ASR: create isolated environment and install dependencies",
+            ["Step.WhisperX"] = "WhisperX: create isolated environment and install dependencies",
             ["Step.Qwen3Tts"] = "Qwen3-TTS: create isolated environment and install dependencies",
             ["Step.InstallMsi"] = "Install program files (backend/frontend)",
 

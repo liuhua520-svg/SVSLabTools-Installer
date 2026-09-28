@@ -23,12 +23,29 @@ namespace SVSLabToolsInstaller.Core
         // 两行（这些改为按 TorchVariant 动态生成，见 BuildCoreRequirements）。
         // 其余内容（包括每一处 pgvector/spacy-pkuseg 等的详细修复说明
         // 注释）原样保留，避免遗漏任何一个已知坑的解释。
+        //
+        // 【2026-08 架构调整，务必保持与 backend/requirements.txt 同步】
+        // WhisperX 和 Qwen3-ASR 在主环境（.mfa_env）里的位置互换了：
+        //   - WhisperX 迁出主环境，现在跑在独立的 whisperx_server.py
+        //     进程里（.whisperx_env，见下方 WhisperXFixedBody /
+        //     BuildWhisperXRequirements）。原因：whisperx==3.2.0 精确
+        //     锁定 transformers==4.39.3（经由 faster-whisper==1.0.0 +
+        //     ctranslate2==4.4.0 + tokenizers<0.16 一路锁下来），直接
+        //     和下面 qwen-asr 精确锁定的 transformers==4.57.6 冲突——
+        //     两个版本区间历史上从未有过交集，装进同一个环境
+        //     `pip install` 必然 ResolutionImpossible，无解。
+        //   - Qwen3-ASR / Qwen3-ForcedAligner（qwen-asr 包）反过来迁入
+        //     主环境，在 app.py 进程内本地加载，不再需要独立的
+        //     qwen3_server.py / .qwen3_env（该服务已下线，对应的
+        //     BuildQwen3Requirements 仍保留但不再被调用，见其注释）。
         // ────────────────────────────────────────────────────────────
         private const string CoreFixedBody = @"
 # SVS Lab Tools / SVS Lab Aligner - fixed main environment
 # Target: Python 3.10 / Windows x64
-# IMPORTANT: Qwen3-ASR and NeMo are intentionally NOT installed here.
+# IMPORTANT: WhisperX and NeMo are intentionally NOT installed here.
 # They run as separate HTTP server environments to avoid dependency conflicts.
+# Qwen3-ASR / Qwen3-ForcedAligner (qwen-asr package) ARE installed here and run
+# in-process (see the ""Qwen3-ASR / Qwen3-ForcedAligner"" section below for why).
 
 # Core
 numpy==1.26.4
@@ -75,16 +92,31 @@ dragonmapper==0.3.0
 hanziconv==0.3.2
 python-mecab-ko==1.3.7
 
-# WhisperX 3.2.0 is retained because this project intentionally keeps NumPy 1.26.x.
-# WhisperX 3.2.0 requires faster-whisper==1.0.0, ctranslate2==4.4.0 and an unconstrained transformers.
-# faster-whisper==1.0.0 requires tokenizers<0.16, so pin an older Transformers stack here.
-# PyAV 11.0.0 is NOT installed by pip: the installer installs conda-forge av=11.0.0 first
-# to avoid a Windows source build that requires FFmpeg import libraries.
-whisperx==3.2.0
-ctranslate2==4.4.0
-transformers==4.39.3
-tokenizers==0.15.2
-huggingface-hub==0.36.2
+# ====================== WhisperX ======================
+# NOTE: whisperx is intentionally NOT installed here (removed — this is the
+# other half of the 2026-08 architecture swap described above the class).
+# WhisperX now runs exclusively inside the separate whisperx_server.py
+# process (.whisperx_env, see WhisperXFixedBody / BuildWhisperXRequirements)
+# and is called over HTTP on 127.0.0.1:5854 — alt_aligners.py's
+# WhisperXAligner class is a thin HTTP client (POST /transcribe,
+# POST /align), matching the pattern Qwen3ASRAligner/Qwen3ForcedAligner use
+# below. This env never needs whisperx/faster-whisper/ctranslate2 installed.
+
+# ====================== Qwen3-ASR / Qwen3-ForcedAligner ======================
+# 【2026-08 架构调整】此前 qwen-asr 因为版本冲突（见上面 WhisperX 一节）被
+# 排除在这个环境之外，只能运行在独立的 qwen3_server.py 进程
+# （.qwen3_env）里，通过 HTTP 调用。现在 WhisperX 已经迁出这个环境，
+# qwen-asr 的 transformers==4.57.6 精确锁定不再与任何其它包冲突，可以
+# 直接安装进这个主环境，Qwen3-ASR 和 Qwen3-ForcedAligner 都改为在
+# app.py 进程内本地加载（qwen3_server.py 已下线）。
+qwen-asr==0.0.6
+# qwen-asr 自身在 PyPI 上精确锁定了 transformers==4.57.6 /
+# accelerate==1.12.0（见其 requires_dist），下面两行的宽松下限不会与
+# 之冲突，pip 解析时最终会以 qwen-asr 的精确锁定版本为准；这里保留
+# 宽松下限只是为了在 qwen-asr 未来放宽自己的锁定范围时仍有一个基本
+# 版本保障，不需要跟着精确改动。
+transformers==4.57.6
+accelerate==1.12.0
 
 # Traditional -> Simplified Chinese conversion
 opencc-python-reimplemented>=0.1.7
@@ -96,6 +128,11 @@ pywin32>=306; sys_platform == ""win32""
 # Project file formats
 ruamel.yaml==0.19.1
 mido==1.3.3
+
+# NOTE:
+# kalpy-kaldi is intentionally NOT installed by pip here.
+# The upstream package is a Kaldi binding and recommends conda-forge Kaldi/Kalpy.
+# Install it separately in the MFA environment if your setup script requires it.
 ";
 
         private const string NemoFixedBody = @"
@@ -121,6 +158,16 @@ requests
 tqdm
 ";
 
+        /// <summary>
+        /// 【当前未被调用，服务已下线】qwen3_server.py 独立服务
+        /// （.qwen3_env）已于 2026-08 架构调整中下线——Qwen3-ASR /
+        /// Qwen3-ForcedAligner（qwen-asr 包）现在直接内联安装进主环境
+        /// .mfa_env（见 CoreFixedBody），不再需要一个独立进程。原来这个
+        /// 常量对应的安装步骤（BuildQwen3Requirements）已被界面上的
+        /// WhisperX 选项取代，见 EnvironmentPlanner.BuildPlan /
+        /// RunWhisperXEnvAsync。保留这个常量和下面的方法只是为了留存
+        /// 历史实现，不在当前安装路径里被引用。
+        /// </summary>
         private const string Qwen3FixedBody = @"
 # qwen3_server.py 独立服务依赖（Qwen3-ASR-1.7B / Qwen3-ForcedAligner-0.6B）
 # 主环境只通过 HTTP 调用 127.0.0.1:5001，不需要装 qwen-asr / transformers。
@@ -138,6 +185,70 @@ numpy==1.26.4
 
 # ====================== 音频处理 ======================
 soundfile==0.12.1
+
+# ====================== 网络与其他基础库 ======================
+requests
+tqdm
+";
+
+        // ────────────────────────────────────────────────────────────
+        // whisperx_server.py 独立服务依赖（.whisperx_env），原样对齐
+        // backend/requirements-whisperx.txt 里 --extra-index-url 那一行
+        // 之后、torch 那几行之前的固定部分。torch/torchaudio 由
+        // BuildWhisperXRequirements 按用户选择的硬件动态生成，不写在
+        // 这个常量里，与其它三个环境的处理方式一致。
+        //
+        // 【为什么单独建环境，不能装进 .mfa_env】whisperx==3.2.0 经由
+        // faster-whisper==1.0.0 + ctranslate2==4.4.0 精确锁定
+        // transformers==4.39.3（因为 faster-whisper==1.0.0 要求
+        // tokenizers<0.16），这与 .mfa_env 里 qwen-asr==0.0.6 精确锁定
+        // 的 transformers==4.57.6 直接冲突——两个包历史上都从未放宽过
+        // 这条锁定，装进同一个环境 pip 必然 ResolutionImpossible，无论
+        // backtracking 到哪个版本都无法同时满足两者。详见
+        // CoreFixedBody 顶部的架构调整说明。
+        // ────────────────────────────────────────────────────────────
+        private const string WhisperXFixedBody = @"
+# whisperx_server.py 独立服务依赖（不要装进主 .mfa_env，也不要和
+# .qwen3tts_env / .nemo_env 共用！）
+#
+# 说明：
+#   这是 WhisperX 跑在独立进程里所需的全部依赖。主 Flask 应用（app.py
+#   所在的 .mfa_env）只通过 HTTP 调用 127.0.0.1:5854，完全不需要装
+#   whisperx / faster-whisper / ctranslate2 / 对应版本的 transformers
+#   这一套。
+
+# ====================== 服务框架 ======================
+flask==2.3.3
+
+# ====================== 打包基础设施 ======================
+# ctranslate2==4.4.0 在导入时执行 `import pkg_resources`（来自
+# setuptools，并非标准库）。较新的 conda-forge python=3.10 引导环境 /
+# 某些 venv 默认不再自带 setuptools，若缺失会在首次真正调用
+# whisperx.load_model()（即首次 /transcribe 请求，而非服务启动时）才
+# 报 ModuleNotFoundError: No module named 'pkg_resources'，具有较强
+# 迷惑性。显式锁定版本号，避免仅依赖""升级 pip/setuptools/wheel""这一步
+# 隐式满足。
+setuptools>=65
+
+# ====================== WhisperX ======================
+# WhisperX 3.2.0 is retained because this project intentionally keeps NumPy 1.26.x.
+# WhisperX 3.2.0 requires faster-whisper==1.0.0, ctranslate2==4.4.0 and an unconstrained transformers.
+# faster-whisper==1.0.0 requires tokenizers<0.16, so pin an older Transformers stack here.
+# PyAV 11.0.0 is NOT installed by pip: the installer installs conda-forge av=11.0.0 first
+# to avoid a Windows source build that requires FFmpeg import libraries.
+whisperx==3.2.0
+ctranslate2==4.4.0
+transformers==4.39.3
+tokenizers==0.15.2
+huggingface-hub==0.36.2
+
+# ====================== 基础数值库 ======================
+numpy==1.26.4
+
+# ====================== 音频处理 ======================
+soundfile==0.12.1
+librosa==0.11.0
+resampy==0.4.3
 
 # ====================== 网络与其他基础库 ======================
 requests
@@ -210,7 +321,13 @@ tqdm
             return Compose(rule, variant, NemoFixedBody, includeTorchAudio: true);
         }
 
-        /// <summary>生成 Qwen3-ASR 独立环境的最终 requirements 内容。</summary>
+        /// <summary>
+        /// 【当前未被调用，服务已下线】生成 Qwen3-ASR 独立环境
+        /// （.qwen3_env）的 requirements 内容。qwen3_server.py 已下线，
+        /// 见 Qwen3FixedBody 上的说明。保留这个方法只是为了留存历史
+        /// 实现，当前安装路径不再引用它——界面上原来的"Qwen3-ASR"选项
+        /// 已被"WhisperX"取代，见 BuildWhisperXRequirements。
+        /// </summary>
         public static string BuildQwen3Requirements(TorchVariant variant)
         {
             var rule = new TorchRequirementRule(
@@ -220,6 +337,26 @@ tqdm
                 indexStrategy: IndexUrlStrategy.ExtraIndexTopOfFile);
             // 历史 requirements-qwen3.txt 只声明 torch，没有 torchaudio。
             return Compose(rule, variant, Qwen3FixedBody, includeTorchAudio: false);
+        }
+
+        /// <summary>
+        /// 生成 WhisperX 独立环境（.whisperx_env）的最终 requirements
+        /// 内容。索引策略：ExtraIndexTopOfFile（与 Core/qwen3tts 相同，
+        /// 不是 NeMo 那种会踩坑的 ReplaceIndexInlineForCudaOnly——
+        /// requirements-whisperx.txt 顶部用的就是 --extra-index-url，
+        /// 可以直接走通用的"生成 requirements 文件 + pip install -r"
+        /// 流程，不需要像 NeMo 那样拆成多条直接 pip 命令）。
+        /// torch 基础版本 2.3.1，与 Core/qwen3 一致；含 torchaudio，
+        /// 不含 torchvision。
+        /// </summary>
+        public static string BuildWhisperXRequirements(TorchVariant variant)
+        {
+            var rule = new TorchRequirementRule(
+                torchBaseVersion: "2.3.1",
+                includeTorchVision: false,
+                torchVisionBaseVersion: null,
+                indexStrategy: IndexUrlStrategy.ExtraIndexTopOfFile);
+            return Compose(rule, variant, WhisperXFixedBody, includeTorchAudio: true);
         }
 
         /// <summary>

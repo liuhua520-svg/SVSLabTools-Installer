@@ -20,7 +20,7 @@ namespace SVSLabToolsInstaller
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.grpComponents = new System.Windows.Forms.GroupBox();
             this.chkQwen3Tts = new System.Windows.Forms.CheckBox();
-            this.chkQwen3Asr = new System.Windows.Forms.CheckBox();
+            this.chkWhisperX = new System.Windows.Forms.CheckBox();
             this.chkNemo = new System.Windows.Forms.CheckBox();
             this.grpLang = new System.Windows.Forms.GroupBox();
             this.chkLangYue = new System.Windows.Forms.CheckBox();
@@ -49,7 +49,7 @@ namespace SVSLabToolsInstaller
             // grpComponents
             // 
             this.grpComponents.Controls.Add(this.chkQwen3Tts);
-            this.grpComponents.Controls.Add(this.chkQwen3Asr);
+            this.grpComponents.Controls.Add(this.chkWhisperX);
             this.grpComponents.Controls.Add(this.chkNemo);
             this.grpComponents.Controls.Add(this.grpLang);
             this.grpComponents.Controls.Add(this.chkCore);
@@ -73,16 +73,16 @@ namespace SVSLabToolsInstaller
             this.chkQwen3Tts.Text = "Qwen3-TTS（独立环境，语音合成服务）";
             this.chkQwen3Tts.UseVisualStyleBackColor = true;
             // 
-            // chkQwen3Asr
+            // chkWhisperX
             // 
-            this.chkQwen3Asr.AutoSize = true;
-            this.chkQwen3Asr.Location = new System.Drawing.Point(14, 174);
-            this.chkQwen3Asr.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.chkQwen3Asr.Name = "chkQwen3Asr";
-            this.chkQwen3Asr.Size = new System.Drawing.Size(234, 16);
-            this.chkQwen3Asr.TabIndex = 3;
-            this.chkQwen3Asr.Text = "Qwen3-ASR（独立环境，语音识别服务）";
-            this.chkQwen3Asr.UseVisualStyleBackColor = true;
+            this.chkWhisperX.AutoSize = true;
+            this.chkWhisperX.Location = new System.Drawing.Point(14, 174);
+            this.chkWhisperX.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.chkWhisperX.Name = "chkWhisperX";
+            this.chkWhisperX.Size = new System.Drawing.Size(228, 16);
+            this.chkWhisperX.TabIndex = 3;
+            this.chkWhisperX.Text = "WhisperX（独立环境，语音识别服务）";
+            this.chkWhisperX.UseVisualStyleBackColor = true;
             // 
             // chkNemo
             // 
@@ -110,6 +110,7 @@ namespace SVSLabToolsInstaller
             this.grpLang.TabIndex = 1;
             this.grpLang.TabStop = false;
             this.grpLang.Text = "MFA 语言模型（依赖 Core）";
+            this.grpLang.Visible = false;
             // 
             // chkLangYue
             // 
@@ -121,6 +122,7 @@ namespace SVSLabToolsInstaller
             this.chkLangYue.TabIndex = 4;
             this.chkLangYue.Text = "粤语";
             this.chkLangYue.UseVisualStyleBackColor = true;
+            this.chkLangYue.Visible = false;
             // 
             // chkLangKor
             // 
@@ -169,6 +171,9 @@ namespace SVSLabToolsInstaller
             // chkCore
             // 
             this.chkCore.AutoSize = true;
+            this.chkCore.Checked = true;
+            this.chkCore.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkCore.Enabled = false;
             this.chkCore.Location = new System.Drawing.Point(14, 20);
             this.chkCore.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.chkCore.Name = "chkCore";
@@ -176,6 +181,7 @@ namespace SVSLabToolsInstaller
             this.chkCore.TabIndex = 0;
             this.chkCore.Text = "Core（核心环境，主运行环境，建议勾选）";
             this.chkCore.UseVisualStyleBackColor = true;
+            this.chkCore.CheckedChanged += new System.EventHandler(this.chkCore_CheckedChanged);
             // 
             // grpTorch
             // 
@@ -347,7 +353,7 @@ namespace SVSLabToolsInstaller
         private System.Windows.Forms.CheckBox chkLangKor;
         private System.Windows.Forms.CheckBox chkLangYue;
         private System.Windows.Forms.CheckBox chkNemo;
-        private System.Windows.Forms.CheckBox chkQwen3Asr;
+        private System.Windows.Forms.CheckBox chkWhisperX;
         private System.Windows.Forms.CheckBox chkQwen3Tts;
         private System.Windows.Forms.GroupBox grpTorch;
         private System.Windows.Forms.RadioButton radioTorchCpu;

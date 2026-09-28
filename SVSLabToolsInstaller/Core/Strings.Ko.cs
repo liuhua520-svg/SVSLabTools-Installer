@@ -10,7 +10,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.WindowTitle"] = "SVS Lab Tools 설치 프로그램",
 
             ["Ui.GroupComponents"] = "설치할 기능 선택",
-            ["Ui.ChkCore"] = "Core(핵심 환경, 기본 실행 환경, 선택 권장)",
+            ["Ui.ChkCore"] = "Core(핵심 환경, 기본 실행 환경, 선택 필요)",
             ["Ui.GroupLang"] = "MFA 언어 모델(Core 필요)",
             ["Ui.LangChinese"] = "중국어(표준어)",
             ["Ui.LangEnglish"] = "영어",
@@ -18,7 +18,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.LangKorean"] = "한국어",
             ["Ui.LangCantonese"] = "광둥어",
             ["Ui.ChkNemo"] = "NeMo-FA(독립 환경, 강제 정렬 서비스)",
-            ["Ui.ChkQwen3Asr"] = "Qwen3-ASR(독립 환경, 음성 인식 서비스)",
+            ["Ui.ChkWhisperX"] = "WhisperX(독립 환경, 음성 인식 서비스)",
             ["Ui.ChkQwen3Tts"] = "Qwen3-TTS(독립 환경, 음성 합성 서비스)",
 
             ["Ui.GroupTorch"] = "PyTorch 하드웨어 유형(모든 환경의 torch 버전에 영향)",
@@ -32,7 +32,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.SizeHint"] =
                 "예상 디스크 사용량(참고용이며 실제 크기는 다운로드 내용에 따라 달라짐):\n" +
                 "Core 약 3-5GB(PyTorch 포함); 언어 모델당 약 100-500MB;\n" +
-                "NeMo-FA 약 3-4GB; Qwen3-ASR 약 4-6GB; Qwen3-TTS 약 4-6GB.",
+                "NeMo-FA 약 3-4GB; WhisperX 약 3-5GB; Qwen3-TTS 약 4-6GB.",
 
             ["Ui.StartInstall"] = "설치 시작",
             ["Ui.CancelInstall"] = "설치 취소",
@@ -43,7 +43,7 @@ namespace SVSLabToolsInstaller.Core
             ["Step.Core"] = "Core: 기본 환경(.mfa_env) 생성 및 종속성 설치",
             ["Step.Lang"] = "MFA 언어 모델: {0}",
             ["Step.Nemo"] = "NeMo-FA: 독립 환경 생성 및 종속성 설치",
-            ["Step.Qwen3Asr"] = "Qwen3-ASR: 독립 환경 생성 및 종속성 설치",
+            ["Step.WhisperX"] = "WhisperX: 독립 환경 생성 및 종속성 설치",
             ["Step.Qwen3Tts"] = "Qwen3-TTS: 독립 환경 생성 및 종속성 설치",
             ["Step.InstallMsi"] = "프로그램 파일 설치(backend/frontend)",
 

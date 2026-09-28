@@ -16,7 +16,14 @@ namespace SVSLabToolsInstaller.Core
         public bool LangKorean { get; set; }
         public bool LangCantonese { get; set; }
         public bool Nemo { get; set; }
-        public bool Qwen3Asr { get; set; }
+        // 【2026-08 架构调整】原 Qwen3Asr 属性改名为 WhisperX——界面上
+        // 原来的"Qwen3-ASR（独立环境，语音识别服务）"选项已整体替换成
+        // "WhisperX（独立环境，语音识别服务）"，不是新增一个选项。
+        // qwen3_server.py 已下线，Qwen3-ASR 现在内联安装进 Core 主环境
+        // （见 RequirementsBuilder.CoreFixedBody），不再对应一个独立的
+        // 勾选框。属性改名是为了避免以后维护者看到 Qwen3Asr 这个名字、
+        // 却发现它实际驱动的是 WhisperX 安装步骤，造成困惑。
+        public bool WhisperX { get; set; }
         public bool Qwen3Tts { get; set; }
         public TorchVariant Torch { get; set; } = TorchVariant.Cpu;
     }
@@ -33,7 +40,25 @@ namespace SVSLabToolsInstaller.Core
         private readonly string _micromambaExePath;
         private readonly string _envAssetsDir;
 
-        /// <param name="appDir">虚拟环境的安装根目录（.mfa_env 等建在这下面）。</param>
+        /// <summary>
+        /// 虚拟环境所在子目录名，相对 appDir。应用端（launcher.py 的
+        /// RUNTIME_DIR、mfa_utils.py 的 env_dir()/kaldi_env_dir()）约定
+        /// 环境都放在 &lt;APP_ROOT&gt;\runtime\ 下，这里必须与之一致。
+        /// 环境目录名保留前导点（.mfa_env 等），与 mfa_utils.py 的查找
+        /// 名称一致。micromamba 的包缓存（_setup\.mamba_root）只是安装期
+        /// 缓存，刻意不放进 runtime，见 MicromambaRunner。
+        /// </summary>
+        public const string RuntimeDirName = "runtime";
+
+        /// <summary>返回 appDir\runtime\&lt;envDirName&gt;，所有环境前缀都经由这里生成。</summary>
+        public static string EnvPrefixFor(string appDir, string envDirName)
+        {
+            return Path.Combine(appDir.TrimEnd('\\', '/'), RuntimeDirName, envDirName);
+        }
+
+        private string EnvPrefix(string envDirName) => EnvPrefixFor(_appDir, envDirName);
+
+        /// <param name="appDir">安装根目录；虚拟环境建在 appDir\runtime\ 下（.mfa_env 等）。</param>
         /// <param name="micromambaExePath">micromamba.exe 路径。</param>
         /// <param name="envAssetsDir">
         /// 存放 mfa_env_sitecustomize.py / mfa_utils.py 的目录。
@@ -47,6 +72,10 @@ namespace SVSLabToolsInstaller.Core
             _appDir = appDir.TrimEnd('\\', '/');
             _micromambaExePath = micromambaExePath;
             _envAssetsDir = envAssetsDir.TrimEnd('\\', '/');
+
+            // micromamba create -p 对"父目录不存在"的处理不做假设，
+            // 这里显式建好 appDir\runtime，后面各环境直接建在它下面。
+            Directory.CreateDirectory(Path.Combine(_appDir, RuntimeDirName));
         }
 
         public List<InstallStep> BuildPlan(InstallSelection sel)
@@ -82,16 +111,10 @@ namespace SVSLabToolsInstaller.Core
                     ct => RunNemoEnvAsync(sel.Torch, ct)));
             }
 
-            if (sel.Qwen3Asr)
+            if (sel.WhisperX)
             {
-                steps.Add(new InstallStep(Strings.Get("Step.Qwen3Asr"),
-                    ct => RunIsolatedEnvAsync(
-                        envDirName: ".qwen3_env",
-                        displayName: "Qwen3-ASR",
-                        pythonVersion: "3.10",
-                        requirementsContent: RequirementsBuilder.BuildQwen3Requirements(sel.Torch),
-                        requirementsLabel: "qwen3",
-                        ct: ct)));
+                steps.Add(new InstallStep(Strings.Get("Step.WhisperX"),
+                    ct => RunWhisperXEnvAsync(sel.Torch, ct)));
             }
 
             if (sel.Qwen3Tts)
@@ -120,8 +143,8 @@ namespace SVSLabToolsInstaller.Core
             var runner = new MicromambaRunner(_appDir, _micromambaExePath);
             runner.LineReceived += OnRunnerLine;
 
-            string envPrefix = Path.Combine(_appDir, ".mfa_env");
-            string kaldiEnvPrefix = Path.Combine(_appDir, ".kaldi_env");
+            string envPrefix = EnvPrefix(".mfa_env");
+            string kaldiEnvPrefix = EnvPrefix(".kaldi_env");
 
             if (Directory.Exists(envPrefix) && !ConfirmRecreate(Strings.Get("Ui.MfaMainEnvName"), envPrefix))
             {
@@ -287,7 +310,7 @@ namespace SVSLabToolsInstaller.Core
             var runner = new MicromambaRunner(_appDir, _micromambaExePath);
             runner.LineReceived += OnRunnerLine;
 
-            string envPrefix = Path.Combine(_appDir, ".mfa_env");
+            string envPrefix = EnvPrefix(".mfa_env");
             if (!File.Exists(Path.Combine(envPrefix, "python.exe")))
             {
                 OnRunnerLine(Strings.Get("Log.MfaEnvMissing1"));
@@ -364,7 +387,7 @@ namespace SVSLabToolsInstaller.Core
             var runner = new MicromambaRunner(_appDir, _micromambaExePath);
             runner.LineReceived += OnRunnerLine;
 
-            string envPrefix = Path.Combine(_appDir, ".nemo_env");
+            string envPrefix = EnvPrefix(".nemo_env");
 
             if (Directory.Exists(envPrefix) && !ConfirmRecreate(displayName, envPrefix))
             {
@@ -419,11 +442,79 @@ namespace SVSLabToolsInstaller.Core
         }
 
         // ────────────────────────────────────────────────────────────
-        // 独立环境（Qwen3-ASR / Qwen3-TTS），迁移自
-        // 05_qwen3.bat / 06_qwen3tts.bat —— 两者结构完全一致，统一成
-        // 一个参数化方法。NeMo 原本也走这个方法，现在改用上面专门的
-        // RunNemoEnvAsync（见其注释说明原因），这个通用方法继续服务
-        // 剩下两个仍然用"requirements 文件 + pip install -r"方式的环境。
+        // WhisperX 独立环境：与 RunIsolatedEnvAsync 的区别是需要先用
+        // conda-forge 装 PyAV（原因见下方注释），装完才能走
+        // "requirements 文件 + pip install -r"这个通用流程，所以不能
+        // 直接复用那个通用方法，需要单独实现——这一点和 NeMo 需要拆成
+        // 两条直接 pip 命令是不同性质的"不能复用"，WhisperX 这里反而
+        // 可以正常用 requirements 文件（顶部是 --extra-index-url，不是
+        // NeMo 那种会踩坑的 --index-url），只是多一步 conda-forge 预装。
+        //
+        // 【为什么 PyAV 要用 conda-forge 装，不能走 pip】
+        // requirements-whisperx.txt 的注释原话："PyAV 11.0.0 is NOT
+        // installed by pip: the installer installs conda-forge av=11.0.0
+        // first to avoid a Windows source build that requires FFmpeg
+        // import libraries."——PyAV 11.0.0 在 Windows 上没有对应的预编译
+        // wheel，pip 装的话会触发源码编译，需要 FFmpeg 的 import
+        // libraries（而不仅仅是 FFmpeg 可执行文件），这在普通用户机器上
+        // 几乎必然编译失败。conda-forge 的 av 包是预编译好的二进制，
+        // 直接装即可，跳过整个编译环节。这与 Core 环境（.mfa_env）里
+        // 处理 PyAV 的方式完全一致（同一个原因、同一个解法），见
+        // RunCoreEnvAsync 里的 InstallCondaPackageAsync(..., "av=11.0.0", ...)。
+        // ────────────────────────────────────────────────────────────
+        private async Task<bool> RunWhisperXEnvAsync(TorchVariant torch, CancellationToken ct)
+        {
+            const string displayName = "WhisperX";
+            var runner = new MicromambaRunner(_appDir, _micromambaExePath);
+            runner.LineReceived += OnRunnerLine;
+
+            string envPrefix = EnvPrefix(".whisperx_env");
+
+            if (Directory.Exists(envPrefix) && !ConfirmRecreate(displayName, envPrefix))
+            {
+                OnRunnerLine(Strings.Get("Log.UseExistingIsolatedEnv", displayName));
+            }
+            else
+            {
+                if (Directory.Exists(envPrefix)) Directory.Delete(envPrefix, recursive: true);
+                OnRunnerLine(Strings.Get("Log.CreatingIsolatedEnv", displayName));
+                if (!await runner.CreateEnvAsync(envPrefix, "conda-forge", "python=3.10 pip", ct).ConfigureAwait(false))
+                {
+                    OnRunnerLine(Strings.Get("Log.IsolatedEnvCreateFailed", displayName));
+                    return false;
+                }
+            }
+
+            OnRunnerLine(Strings.Get("Log.InstallingPyAv"));
+            if (!await runner.InstallCondaPackageAsync(envPrefix, "conda-forge", "av=11.0.0", ct).ConfigureAwait(false))
+            {
+                OnRunnerLine(Strings.Get("Log.PyAvInstallFailed"));
+                return false;
+            }
+
+            OnRunnerLine(Strings.Get("Log.IsolatedEnvReady", displayName));
+
+            string reqPath = RequirementsBuilder.WriteToTempFile(
+                RequirementsBuilder.BuildWhisperXRequirements(torch), "whisperx");
+            if (!await runner.PipInstallAsync(envPrefix, reqPath, ct).ConfigureAwait(false))
+            {
+                OnRunnerLine(Strings.Get("Log.IsolatedDepsFailed", displayName));
+                return false;
+            }
+            OnRunnerLine(Strings.Get("Log.IsolatedDepsOk", displayName));
+            return true;
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // 独立环境（目前只剩 Qwen3-TTS 在用），迁移自 06_qwen3tts.bat。
+        // 这个方法曾经也服务 Qwen3-ASR（.qwen3_env）和 NeMo（.nemo_env），
+        // 两者现已先后改用专门的方法：NeMo 改用 RunNemoEnvAsync（拆成两条
+        // 直接 pip 命令，见其注释）；原 Qwen3-ASR 的位置被 WhisperX 取代，
+        // 改用上面的 RunWhisperXEnvAsync（多一步 conda-forge 装 PyAV）。
+        // 保留这个通用方法是因为 Qwen3-TTS 目前的安装方式（纯 requirements
+        // 文件 + pip install -r，不需要 conda-forge 预装步骤）仍然符合它
+        // 的适用范围；如果以后只剩一个调用方，可以考虑把这个方法内联
+        // 进调用点，但目前保留参数化形式没有额外成本。
         // ────────────────────────────────────────────────────────────
         private async Task<bool> RunIsolatedEnvAsync(
             string envDirName,
@@ -436,7 +527,7 @@ namespace SVSLabToolsInstaller.Core
             var runner = new MicromambaRunner(_appDir, _micromambaExePath);
             runner.LineReceived += OnRunnerLine;
 
-            string envPrefix = Path.Combine(_appDir, envDirName);
+            string envPrefix = EnvPrefix(envDirName);
 
             if (Directory.Exists(envPrefix) && !ConfirmRecreate(displayName, envPrefix))
             {

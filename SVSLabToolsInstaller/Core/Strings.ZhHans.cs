@@ -17,7 +17,7 @@ namespace SVSLabToolsInstaller.Core
 
             // ── Ui: 功能选择区 ────────────────────────────────────────
             ["Ui.GroupComponents"] = "选择要安装的功能",
-            ["Ui.ChkCore"] = "Core（核心环境，主运行环境，建议勾选）",
+            ["Ui.ChkCore"] = "Core（核心环境，主运行环境，必选）",
             ["Ui.GroupLang"] = "MFA 语言模型（依赖 Core）",
             ["Ui.LangChinese"] = "中文普通话",
             ["Ui.LangEnglish"] = "英语",
@@ -25,7 +25,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.LangKorean"] = "韩语",
             ["Ui.LangCantonese"] = "粤语",
             ["Ui.ChkNemo"] = "NeMo-FA（独立环境，强制对齐服务）",
-            ["Ui.ChkQwen3Asr"] = "Qwen3-ASR（独立环境，语音识别服务）",
+            ["Ui.ChkWhisperX"] = "WhisperX（独立环境，语音识别服务）",
             ["Ui.ChkQwen3Tts"] = "Qwen3-TTS（独立环境，语音合成服务）",
 
             // ── Ui: PyTorch 硬件类型区 ────────────────────────────────
@@ -41,7 +41,7 @@ namespace SVSLabToolsInstaller.Core
             ["Ui.SizeHint"] =
                 "预计磁盘占用（仅供参考，实际以下载为准）：\n" +
                 "Core 约 3-5 GB（含 PyTorch）；每个语言模型约 100-500 MB；\n" +
-                "NeMo-FA 约 3-4 GB；Qwen3-ASR 约 4-6 GB；Qwen3-TTS 约 4-6 GB。",
+                "NeMo-FA 约 3-4 GB；WhisperX 约 3-5 GB；Qwen3-TTS 约 4-6 GB。",
 
             // ── Ui: 按钮/进度 ─────────────────────────────────────────
             ["Ui.StartInstall"] = "开始安装",
@@ -54,7 +54,7 @@ namespace SVSLabToolsInstaller.Core
             ["Step.Core"] = "Core: 创建主环境（.mfa_env）与安装依赖",
             ["Step.Lang"] = "MFA 语言模型: {0}",
             ["Step.Nemo"] = "NeMo-FA: 创建独立环境与安装依赖",
-            ["Step.Qwen3Asr"] = "Qwen3-ASR: 创建独立环境与安装依赖",
+            ["Step.WhisperX"] = "WhisperX: 创建独立环境与安装依赖",
             ["Step.Qwen3Tts"] = "Qwen3-TTS: 创建独立环境与安装依赖",
             ["Step.InstallMsi"] = "安装程序文件（backend/frontend）",
 
@@ -162,7 +162,7 @@ namespace SVSLabToolsInstaller.Core
             ["Log.LangModelDownloadFailed"] = "[!] {0} 模型下载失败，请检查网络后可稍后重试。",
             ["Log.LangModelDownloadOk"] = "[OK] {0} 模型已下载",
 
-            // ── Log: EnvironmentPlanner — 独立环境（NeMo/Qwen3-ASR/Qwen3-TTS） ──
+            // ── Log: EnvironmentPlanner — 独立环境（NeMo/WhisperX/Qwen3-TTS） ──
             ["Log.UseExistingIsolatedEnv"] = "[OK] 使用现有 {0} 环境，跳过创建",
             ["Log.CreatingIsolatedEnv"] = "创建 {0} 独立环境中... 请耐心等待（可能需要几分钟）...",
             ["Log.IsolatedEnvCreateFailed"] = "[ERROR] {0} 环境创建失败",
