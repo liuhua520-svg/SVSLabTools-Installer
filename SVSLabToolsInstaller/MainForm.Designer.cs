@@ -49,10 +49,10 @@ namespace SVSLabToolsInstaller
             // grpComponents
             // 
             this.grpComponents.Controls.Add(this.chkQwen3Tts);
-            this.grpComponents.Controls.Add(this.chkWhisperX);
-            this.grpComponents.Controls.Add(this.chkNemo);
             this.grpComponents.Controls.Add(this.grpLang);
             this.grpComponents.Controls.Add(this.chkCore);
+            this.grpComponents.Controls.Add(this.chkWhisperX);
+            this.grpComponents.Controls.Add(this.chkNemo);
             this.grpComponents.Location = new System.Drawing.Point(10, 10);
             this.grpComponents.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.grpComponents.Name = "grpComponents";
@@ -65,7 +65,7 @@ namespace SVSLabToolsInstaller
             // chkQwen3Tts
             // 
             this.chkQwen3Tts.AutoSize = true;
-            this.chkQwen3Tts.Location = new System.Drawing.Point(14, 194);
+            this.chkQwen3Tts.Location = new System.Drawing.Point(14, 80);
             this.chkQwen3Tts.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.chkQwen3Tts.Name = "chkQwen3Tts";
             this.chkQwen3Tts.Size = new System.Drawing.Size(234, 16);
@@ -76,7 +76,7 @@ namespace SVSLabToolsInstaller
             // chkWhisperX
             // 
             this.chkWhisperX.AutoSize = true;
-            this.chkWhisperX.Location = new System.Drawing.Point(14, 174);
+            this.chkWhisperX.Location = new System.Drawing.Point(14, 60);
             this.chkWhisperX.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.chkWhisperX.Name = "chkWhisperX";
             this.chkWhisperX.Size = new System.Drawing.Size(228, 16);
@@ -87,7 +87,7 @@ namespace SVSLabToolsInstaller
             // chkNemo
             // 
             this.chkNemo.AutoSize = true;
-            this.chkNemo.Location = new System.Drawing.Point(14, 154);
+            this.chkNemo.Location = new System.Drawing.Point(14, 40);
             this.chkNemo.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.chkNemo.Name = "chkNemo";
             this.chkNemo.Size = new System.Drawing.Size(222, 16);
@@ -102,7 +102,7 @@ namespace SVSLabToolsInstaller
             this.grpLang.Controls.Add(this.chkLangJpn);
             this.grpLang.Controls.Add(this.chkLangEng);
             this.grpLang.Controls.Add(this.chkLangCmn);
-            this.grpLang.Location = new System.Drawing.Point(14, 42);
+            this.grpLang.Location = new System.Drawing.Point(14, 114);
             this.grpLang.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.grpLang.Name = "grpLang";
             this.grpLang.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
