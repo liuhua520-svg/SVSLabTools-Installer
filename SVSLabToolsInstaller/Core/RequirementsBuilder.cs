@@ -51,6 +51,13 @@ namespace SVSLabToolsInstaller.Core
 numpy==1.26.4
 setuptools==81.0.0
 
+# 【新增】字幕烧录成视频（burn_subtitles_to_video，见 subtitle_processor.py）
+# 用 Pillow 在 Python 侧把字幕文字画成图片再拼接成视频，不再依赖 ffmpeg
+# 的 subtitles/drawtext 滤镜（这两个都是可选编译项，实测用户环境的
+# ffmpeg 构建没有 subtitles 滤镜）。9.0 起有 stroke_width/stroke_fill
+# 描边参数，这里画字幕黑边白字要用到。
+Pillow>=9.0.0
+
 # Web/API
 flask==2.3.3
 flask-cors==4.0.0
